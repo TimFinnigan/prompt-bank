@@ -11,6 +11,20 @@
   flex-direction: column;
   overflow: hidden;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(0);
+  transition: transform 0.3s ease, opacity 0.3s ease, visibility 0s;
+}
+
+/* Hide the sidebar initially until the script has determined the correct state */
+html.prompt-bank-loading #prompt-bank-sidebar {
+  visibility: hidden;
+  opacity: 0;
+}
+
+#prompt-bank-sidebar.collapsed {
+  transform: translateX(100%);
 }
 
 .prompt-bank-header {
@@ -18,12 +32,153 @@
   border-bottom: 1px solid #ddd;
   background-color: #10a37f;
   color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .prompt-bank-header h2 {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
+}
+
+/* Styles for the form in sidebar */
+.prompt-bank-form {
+  padding: 15px;
+  border-bottom: 1px solid #ddd;
+  background-color: #fff;
+  overflow: hidden;
+  max-height: 300px;
+  transition: max-height 0.3s ease;
+}
+
+.prompt-bank-form.collapsed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.add-prompt-toggle {
+  padding: 10px 15px;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #ddd;
+}
+
+.add-prompt-toggle:hover {
+  background-color: #e5e5e5;
+}
+
+.add-prompt-toggle span {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+.add-prompt-toggle .toggle-icon {
+  font-size: 18px;
+  transform: rotate(0deg);
+  transition: transform 0.3s ease;
+}
+
+.add-prompt-toggle.collapsed .toggle-icon {
+  transform: rotate(-180deg);
+}
+
+.input-container {
+  margin-bottom: 10px;
+}
+
+.input-container input,
+.input-container textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  color: #333;
+  background-color: #fff;
+}
+
+.input-container textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.button-container {
+  display: flex;
+  gap: 8px;
+}
+
+.save-btn {
+  background-color: #10a37f;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  flex: 1;
+}
+
+.save-btn:hover {
+  background-color: #0d8c6d;
+}
+
+.cancel-btn {
+  background-color: #888;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.cancel-btn:hover {
+  background-color: #666;
+}
+
+.status-message {
+  margin-top: 10px;
+  font-size: 13px;
+  padding: 5px 0;
+  text-align: center;
+}
+
+.status-message.success {
+  color: #10a37f;
+}
+
+.status-message.error {
+  color: #e53935;
+}
+
+.status-message.info {
+  color: #2196f3;
+}
+
+/* Prompt list container styles */
+.prompt-bank-list-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.prompt-list-title {
+  padding: 10px 15px;
+  margin: 0;
+  font-size: 16px;
+  background-color: #f0f0f0;
+  border-bottom: 1px solid #ddd;
+  color: #444;
 }
 
 #prompt-bank-list {
@@ -37,24 +192,92 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   padding: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   cursor: pointer;
   transition: background-color 0.2s, transform 0.1s;
+  color: #333;
+  position: relative;
 }
 
 .prompt-bank-item:hover {
   background-color: #f0f0f0;
   transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .prompt-bank-item:active {
   transform: translateY(0);
 }
 
+.prompt-bank-item .prompt-name {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 5px;
+  padding-right: 50px; /* Make room for the action buttons */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prompt-bank-item .prompt-preview {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+  max-height: 50px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+
+.prompt-bank-item .prompt-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.prompt-bank-item:hover .prompt-actions {
+  opacity: 1;
+}
+
+.prompt-edit-btn,
+.prompt-delete-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  color: white;
+  padding: 0;
+}
+
+.prompt-edit-btn {
+  background-color: #3498db;
+}
+
+.prompt-edit-btn:hover {
+  background-color: #2980b9;
+}
+
+.prompt-delete-btn {
+  background-color: #e74c3c;
+}
+
+.prompt-delete-btn:hover {
+  background-color: #c0392b;
+}
+
 .prompt-bank-empty {
   color: #888;
   text-align: center;
   padding: 20px 0;
+  font-size: 14px;
 }
 
 /* Adjust the main content to make room for the sidebar */
@@ -62,16 +285,34 @@
    we'll use more targeted selectors */
 @media (min-width: 768px) {
   /* chat.openai.com selectors */
-  main, #__next > div > div, .chat-page {
+  body:not(.prompt-bank-collapsed) main,
+  body:not(.prompt-bank-collapsed) #__next > div > div,
+  body:not(.prompt-bank-collapsed) .chat-page {
     margin-right: 250px !important;
     width: auto !important;
     max-width: calc(100% - 250px) !important;
+    transition: margin-right 0.3s ease, max-width 0.3s ease !important;
+  }
+  
+  body.prompt-bank-collapsed main,
+  body.prompt-bank-collapsed #__next > div > div,
+  body.prompt-bank-collapsed .chat-page {
+    margin-right: 0 !important;
+    max-width: 100% !important;
+    transition: margin-right 0.3s ease, max-width 0.3s ease !important;
   }
   
   /* Target the specific chat container */
-  .flex.flex-col.text-sm {
+  body:not(.prompt-bank-collapsed) .flex.flex-col.text-sm {
     max-width: calc(100% - 250px);
     margin-right: 250px;
+    transition: margin-right 0.3s ease, max-width 0.3s ease !important;
+  }
+  
+  body.prompt-bank-collapsed .flex.flex-col.text-sm {
+    max-width: 100%;
+    margin-right: 0;
+    transition: margin-right 0.3s ease, max-width 0.3s ease !important;
   }
   
   /* More specific selectors for various ChatGPT DOM structures */
@@ -80,18 +321,32 @@
   }
   
   /* chatgpt.com selectors */
-  .relative.flex.flex-col.min-h-screen, 
-  .overflow-hidden.w-full.h-full.relative.flex.z-0 {
+  body:not(.prompt-bank-collapsed) .relative.flex.flex-col.min-h-screen, 
+  body:not(.prompt-bank-collapsed) .overflow-hidden.w-full.h-full.relative.flex.z-0 {
     margin-right: 250px !important;
     width: auto !important;
+    transition: margin-right 0.3s ease !important;
   }
   
-  .relative.h-full.w-full.overflow-auto {
+  body.prompt-bank-collapsed .relative.flex.flex-col.min-h-screen, 
+  body.prompt-bank-collapsed .overflow-hidden.w-full.h-full.relative.flex.z-0 {
+    margin-right: 0 !important;
+    width: auto !important;
+    transition: margin-right 0.3s ease !important;
+  }
+  
+  body:not(.prompt-bank-collapsed) .relative.h-full.w-full.overflow-auto {
     max-width: calc(100% - 250px) !important;
+    transition: max-width 0.3s ease !important;
+  }
+  
+  body.prompt-bank-collapsed .relative.h-full.w-full.overflow-auto {
+    max-width: 100% !important;
+    transition: max-width 0.3s ease !important;
   }
 }
 
-/* Add a toggle button for mobile */
+/* Add a toggle button for mobile and collapsed state */
 .prompt-bank-toggle {
   position: fixed;
   bottom: 20px;
@@ -108,16 +363,61 @@
   cursor: pointer;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   z-index: 1001;
+  transition: right 0.3s ease, opacity 0.3s ease, visibility 0s;
+  visibility: visible;
+  opacity: 1;
 }
 
-/* Responsive adjustments */
-@media (max-width: 767px) {
-  #prompt-bank-sidebar {
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
-  }
-  
-  #prompt-bank-sidebar.active {
-    transform: translateX(0);
-  }
+html.prompt-bank-loading .prompt-bank-toggle {
+  visibility: hidden;
+  opacity: 0;
+}
+
+body:not(.prompt-bank-collapsed) .prompt-bank-toggle {
+  right: 270px;
+}
+
+/* Debug panel styles */
+#debugPanel h3 {
+  font-size: 14px;
+  margin-top: 15px;
+  margin-bottom: 8px;
+}
+
+.debug-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.debug-status {
+  background-color: #f8f8f8;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 14px;
+}
+
+.debug-logs {
+  background-color: #f8f8f8;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 12px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.status-success {
+  color: #10a37f;
+}
+
+.status-error {
+  color: #e53935;
+}
+
+.status-warning {
+  color: #ff9800;
 } 

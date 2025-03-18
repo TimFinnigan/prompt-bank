@@ -96,6 +96,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const promptActions = document.createElement('div');
         promptActions.className = 'prompt-actions';
         
+        // Edit button
+        const editButton = document.createElement('button');
+        editButton.className = 'edit-btn';
+        editButton.textContent = 'Edit';
+        editButton.addEventListener('click', function(e) {
+          e.stopPropagation();
+          editPrompt(name, prompts[name]);
+        });
+        
+        // Delete button
         const deleteButton = document.createElement('button');
         deleteButton.className = 'delete-btn';
         deleteButton.textContent = 'Delete';
@@ -104,6 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
           deletePrompt(name);
         });
         
+        promptActions.appendChild(editButton);
         promptActions.appendChild(deleteButton);
         promptItem.appendChild(promptName);
         promptItem.appendChild(promptActions);
@@ -115,6 +126,19 @@ document.addEventListener('DOMContentLoaded', function() {
         promptList.appendChild(promptItem);
       }
     });
+  }
+  
+  // Edit a prompt
+  function editPrompt(name, text) {
+    // Switch to deposit tab
+    depositTab.click();
+    
+    // Fill in the form with existing prompt
+    promptNameInput.value = name;
+    promptTextInput.value = text;
+    
+    // Show message to user
+    saveMessage.textContent = 'Editing prompt: "' + name + '". Changes will overwrite the existing prompt.';
   }
   
   // Delete a prompt
