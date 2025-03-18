@@ -11,7 +11,16 @@
   flex-direction: column;
   overflow: hidden;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(0);
+  transition: transform 0.3s ease, opacity 0.3s ease, visibility 0s;
+}
+
+/* Hide the sidebar initially until the script has determined the correct state */
+html.prompt-bank-loading #prompt-bank-sidebar {
+  visibility: hidden;
+  opacity: 0;
 }
 
 #prompt-bank-sidebar.collapsed {
@@ -163,7 +172,14 @@
   cursor: pointer;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   z-index: 1001;
-  transition: right 0.3s ease;
+  transition: right 0.3s ease, opacity 0.3s ease, visibility 0s;
+  visibility: visible;
+  opacity: 1;
+}
+
+html.prompt-bank-loading .prompt-bank-toggle {
+  visibility: hidden;
+  opacity: 0;
 }
 
 body:not(.prompt-bank-collapsed) .prompt-bank-toggle {

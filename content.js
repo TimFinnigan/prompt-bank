@@ -339,74 +339,78 @@ function createPromptSidebar() {
     return;
   }
   
-  // Create sidebar container
-  const sidebar = document.createElement('div');
-  sidebar.id = 'prompt-bank-sidebar';
-  
-  // Create header
-  const header = document.createElement('div');
-  header.className = 'prompt-bank-header';
-  
-  const title = document.createElement('h2');
-  title.textContent = 'Prompt Bank';
-  
-  const collapseToggle = document.createElement('div');
-  collapseToggle.className = 'collapse-toggle';
-  collapseToggle.innerHTML = '«';
-  collapseToggle.addEventListener('click', toggleSidebar);
-  
-  header.appendChild(title);
-  header.appendChild(collapseToggle);
-  
-  // Create prompt list container
-  const promptList = document.createElement('div');
-  promptList.id = 'prompt-bank-list';
-  
-  // Add elements to sidebar
-  sidebar.appendChild(header);
-  sidebar.appendChild(promptList);
-  
-  // Create toggle button for mobile/collapsed state
-  const toggleButton = document.createElement('div');
-  toggleButton.className = 'prompt-bank-toggle';
-  toggleButton.innerHTML = '×';
-  toggleButton.addEventListener('click', toggleSidebar);
-  
-  // Try to find the best place to insert the sidebar
-  const insertSidebar = () => {
-    // Try different selectors to find a suitable parent element
-    const chatContainer = document.querySelector('main') || 
-                          document.querySelector('#__next') ||
-                          document.querySelector('.chat-page');
+  // First check the saved state before creating the sidebar
+  chrome.storage.local.get('sidebarState', function(data) {
+    const isCollapsed = data.sidebarState?.collapsed === true;
     
-    if (chatContainer) {
-      // Option 1: Insert after main container
-      if (chatContainer.parentNode) {
-        chatContainer.parentNode.insertBefore(sidebar, chatContainer.nextSibling);
-        document.body.appendChild(toggleButton);
-        return true;
-      }
+    // Create sidebar container with the correct initial state
+    const sidebar = document.createElement('div');
+    sidebar.id = 'prompt-bank-sidebar';
+    if (isCollapsed) {
+      sidebar.classList.add('collapsed');
     }
     
-    // Option 2: Append to body as a fallback
-    document.body.appendChild(sidebar);
-    document.body.appendChild(toggleButton);
-    return true;
-  };
-  
-  if (insertSidebar()) {
-    // Load state and apply it
-    loadSidebarState(function(isCollapsed) {
-      if (isCollapsed) {
-        sidebar.classList.add('collapsed');
-        document.body.classList.add('prompt-bank-collapsed');
-        updateToggleButtonText(true);
+    // Create header
+    const header = document.createElement('div');
+    header.className = 'prompt-bank-header';
+    
+    const title = document.createElement('h2');
+    title.textContent = 'Prompt Bank';
+    
+    const collapseToggle = document.createElement('div');
+    collapseToggle.className = 'collapse-toggle';
+    collapseToggle.innerHTML = isCollapsed ? '»' : '«';
+    collapseToggle.addEventListener('click', toggleSidebar);
+    
+    header.appendChild(title);
+    header.appendChild(collapseToggle);
+    
+    // Create prompt list container
+    const promptList = document.createElement('div');
+    promptList.id = 'prompt-bank-list';
+    
+    // Add elements to sidebar
+    sidebar.appendChild(header);
+    sidebar.appendChild(promptList);
+    
+    // Create toggle button for mobile/collapsed state
+    const toggleButton = document.createElement('div');
+    toggleButton.className = 'prompt-bank-toggle';
+    toggleButton.innerHTML = isCollapsed ? 'PB' : '×';
+    toggleButton.addEventListener('click', toggleSidebar);
+    
+    // Apply the correct body class before inserting the sidebar
+    if (isCollapsed) {
+      document.body.classList.add('prompt-bank-collapsed');
+    }
+    
+    // Try to find the best place to insert the sidebar
+    const insertSidebar = () => {
+      // Try different selectors to find a suitable parent element
+      const chatContainer = document.querySelector('main') || 
+                            document.querySelector('#__next') ||
+                            document.querySelector('.chat-page');
+      
+      if (chatContainer) {
+        // Option 1: Insert after main container
+        if (chatContainer.parentNode) {
+          chatContainer.parentNode.insertBefore(sidebar, chatContainer.nextSibling);
+          document.body.appendChild(toggleButton);
+          return true;
+        }
       }
       
+      // Option 2: Append to body as a fallback
+      document.body.appendChild(sidebar);
+      document.body.appendChild(toggleButton);
+      return true;
+    };
+    
+    if (insertSidebar()) {
       // Load and display prompts
       loadPrompts();
-    });
-  }
+    }
+  });
 }
 
 // Load prompts from storage and display in sidebar
@@ -472,16 +476,42 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
 
 // Initialize when DOM is fully loaded
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', createPromptSidebar);
+  document.addEventListener('DOMContentLoaded', initializePromptBank);
 } else {
+  initializePromptBank();
+}
+
+// Initialize the prompt bank
+function initializePromptBank() {
+  // Add the loading class to prevent the sidebar from flashing
+  document.documentElement.classList.add('prompt-bank-loading');
+  
+  // Create the sidebar (which will check the saved state)
   createPromptSidebar();
+  
+  // Remove the loading class after a brief delay to ensure smooth transition
+  setTimeout(() => {
+    document.documentElement.classList.remove('prompt-bank-loading');
+  }, 300);
 }
 
 // Also add a MutationObserver to handle dynamic page changes in SPAs
 const observer = new MutationObserver(function(mutations) {
   for (const mutation of mutations) {
     if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-      createPromptSidebar();
+      // Only create a new sidebar if one doesn't exist yet
+      if (!document.getElementById('prompt-bank-sidebar')) {
+        // Add loading class
+        document.documentElement.classList.add('prompt-bank-loading');
+        
+        // Create sidebar
+        createPromptSidebar();
+        
+        // Remove loading class after brief delay
+        setTimeout(() => {
+          document.documentElement.classList.remove('prompt-bank-loading');
+        }, 300);
+      }
     }
   }
 });
