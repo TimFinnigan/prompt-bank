@@ -11,6 +11,11 @@
   flex-direction: column;
   overflow: hidden;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+#prompt-bank-sidebar.collapsed {
+  transform: translateX(100%);
 }
 
 .prompt-bank-header {
@@ -18,12 +23,23 @@
   border-bottom: 1px solid #ddd;
   background-color: #10a37f;
   color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .prompt-bank-header h2 {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
+}
+
+.collapse-toggle {
+  cursor: pointer;
+  padding: 5px;
+  font-size: 16px;
+  color: white;
+  transition: transform 0.3s;
 }
 
 #prompt-bank-list {
@@ -40,6 +56,12 @@
   margin-bottom: 8px;
   cursor: pointer;
   transition: background-color 0.2s, transform 0.1s;
+  color: #333;
+  font-weight: 500;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  line-height: 1.4;
 }
 
 .prompt-bank-item:hover {
@@ -55,6 +77,7 @@
   color: #888;
   text-align: center;
   padding: 20px 0;
+  font-size: 14px;
 }
 
 /* Adjust the main content to make room for the sidebar */
@@ -62,16 +85,34 @@
    we'll use more targeted selectors */
 @media (min-width: 768px) {
   /* chat.openai.com selectors */
-  main, #__next > div > div, .chat-page {
+  body:not(.prompt-bank-collapsed) main,
+  body:not(.prompt-bank-collapsed) #__next > div > div,
+  body:not(.prompt-bank-collapsed) .chat-page {
     margin-right: 250px !important;
     width: auto !important;
     max-width: calc(100% - 250px) !important;
+    transition: margin-right 0.3s ease, max-width 0.3s ease !important;
+  }
+  
+  body.prompt-bank-collapsed main,
+  body.prompt-bank-collapsed #__next > div > div,
+  body.prompt-bank-collapsed .chat-page {
+    margin-right: 0 !important;
+    max-width: 100% !important;
+    transition: margin-right 0.3s ease, max-width 0.3s ease !important;
   }
   
   /* Target the specific chat container */
-  .flex.flex-col.text-sm {
+  body:not(.prompt-bank-collapsed) .flex.flex-col.text-sm {
     max-width: calc(100% - 250px);
     margin-right: 250px;
+    transition: margin-right 0.3s ease, max-width 0.3s ease !important;
+  }
+  
+  body.prompt-bank-collapsed .flex.flex-col.text-sm {
+    max-width: 100%;
+    margin-right: 0;
+    transition: margin-right 0.3s ease, max-width 0.3s ease !important;
   }
   
   /* More specific selectors for various ChatGPT DOM structures */
@@ -80,18 +121,32 @@
   }
   
   /* chatgpt.com selectors */
-  .relative.flex.flex-col.min-h-screen, 
-  .overflow-hidden.w-full.h-full.relative.flex.z-0 {
+  body:not(.prompt-bank-collapsed) .relative.flex.flex-col.min-h-screen, 
+  body:not(.prompt-bank-collapsed) .overflow-hidden.w-full.h-full.relative.flex.z-0 {
     margin-right: 250px !important;
     width: auto !important;
+    transition: margin-right 0.3s ease !important;
   }
   
-  .relative.h-full.w-full.overflow-auto {
+  body.prompt-bank-collapsed .relative.flex.flex-col.min-h-screen, 
+  body.prompt-bank-collapsed .overflow-hidden.w-full.h-full.relative.flex.z-0 {
+    margin-right: 0 !important;
+    width: auto !important;
+    transition: margin-right 0.3s ease !important;
+  }
+  
+  body:not(.prompt-bank-collapsed) .relative.h-full.w-full.overflow-auto {
     max-width: calc(100% - 250px) !important;
+    transition: max-width 0.3s ease !important;
+  }
+  
+  body.prompt-bank-collapsed .relative.h-full.w-full.overflow-auto {
+    max-width: 100% !important;
+    transition: max-width 0.3s ease !important;
   }
 }
 
-/* Add a toggle button for mobile */
+/* Add a toggle button for mobile and collapsed state */
 .prompt-bank-toggle {
   position: fixed;
   bottom: 20px;
@@ -108,16 +163,54 @@
   cursor: pointer;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   z-index: 1001;
+  transition: right 0.3s ease;
 }
 
-/* Responsive adjustments */
-@media (max-width: 767px) {
-  #prompt-bank-sidebar {
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
-  }
-  
-  #prompt-bank-sidebar.active {
-    transform: translateX(0);
-  }
+body:not(.prompt-bank-collapsed) .prompt-bank-toggle {
+  right: 270px;
+}
+
+/* Debug panel styles */
+#debugPanel h3 {
+  font-size: 14px;
+  margin-top: 15px;
+  margin-bottom: 8px;
+}
+
+.debug-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.debug-status {
+  background-color: #f8f8f8;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 14px;
+}
+
+.debug-logs {
+  background-color: #f8f8f8;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 12px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.status-success {
+  color: #10a37f;
+}
+
+.status-error {
+  color: #e53935;
+}
+
+.status-warning {
+  color: #ff9800;
 } 

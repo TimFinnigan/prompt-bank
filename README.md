@@ -8,6 +8,7 @@ A Chrome extension that allows you to save and quickly insert prompts on ChatGPT
 - Insert prompts directly into ChatGPT's input field with one click
 - View and manage your saved prompts
 - Convenient sidebar on ChatGPT's website for quick access
+- Collapsible sidebar with persistent state
 - Compatible with both chat.openai.com and chatgpt.com domains
 - Compatible with the latest ChatGPT interface (using contenteditable div)
 
@@ -38,13 +39,18 @@ A Chrome extension that allows you to save and quickly insert prompts on ChatGPT
 **Method 2: From the sidebar**
 1. When visiting ChatGPT, a sidebar will appear on the right side of the page
 2. Click on any prompt in the sidebar to insert it directly into the input field
-3. On mobile or smaller screens, click the "PB" button in the bottom right to show the sidebar
+3. To collapse the sidebar, click the « icon in the header or the × button at the bottom right
+4. To expand a collapsed sidebar, click the "PB" button at the bottom right
 
 ### Deleting Prompts
 
 1. Click on the Prompt Bank extension icon in your toolbar
 2. Click on the "Withdraw" tab
 3. Click the "Delete" button next to the prompt you want to remove
+
+### Sidebar State
+
+The sidebar's collapsed/expanded state is remembered between page loads and browser sessions. When you collapse the sidebar, it will stay collapsed until you expand it again.
 
 ## Troubleshooting
 

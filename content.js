@@ -276,6 +276,62 @@ function insertPromptText(text) {
   }
 }
 
+// Check and load sidebar state
+function loadSidebarState(callback) {
+  chrome.storage.local.get('sidebarState', function(data) {
+    const isCollapsed = data.sidebarState?.collapsed === true;
+    callback(isCollapsed);
+  });
+}
+
+// Save sidebar state
+function saveSidebarState(isCollapsed) {
+  chrome.storage.local.set({ 
+    sidebarState: { 
+      collapsed: isCollapsed,
+      timestamp: Date.now()
+    } 
+  });
+}
+
+// Toggle sidebar collapsed state
+function toggleSidebar() {
+  const sidebar = document.getElementById('prompt-bank-sidebar');
+  const body = document.body;
+  
+  if (!sidebar) return;
+  
+  const isCurrentlyCollapsed = sidebar.classList.contains('collapsed');
+  const newState = !isCurrentlyCollapsed;
+  
+  if (newState) {
+    sidebar.classList.add('collapsed');
+    body.classList.add('prompt-bank-collapsed');
+  } else {
+    sidebar.classList.remove('collapsed');
+    body.classList.remove('prompt-bank-collapsed');
+  }
+  
+  // Update toggle button position
+  updateToggleButtonText(newState);
+  
+  // Save the state
+  saveSidebarState(newState);
+}
+
+// Update toggle button text based on state
+function updateToggleButtonText(isCollapsed) {
+  const toggleButton = document.querySelector('.prompt-bank-toggle');
+  if (toggleButton) {
+    toggleButton.innerHTML = isCollapsed ? 'PB' : '×';
+  }
+  
+  const collapseToggle = document.querySelector('.collapse-toggle');
+  if (collapseToggle) {
+    collapseToggle.innerHTML = isCollapsed ? '»' : '«';
+  }
+}
+
 // Add a sidebar for prompts
 function createPromptSidebar() {
   // Check if sidebar already exists
@@ -290,7 +346,17 @@ function createPromptSidebar() {
   // Create header
   const header = document.createElement('div');
   header.className = 'prompt-bank-header';
-  header.innerHTML = '<h2>Prompt Bank</h2>';
+  
+  const title = document.createElement('h2');
+  title.textContent = 'Prompt Bank';
+  
+  const collapseToggle = document.createElement('div');
+  collapseToggle.className = 'collapse-toggle';
+  collapseToggle.innerHTML = '«';
+  collapseToggle.addEventListener('click', toggleSidebar);
+  
+  header.appendChild(title);
+  header.appendChild(collapseToggle);
   
   // Create prompt list container
   const promptList = document.createElement('div');
@@ -300,13 +366,11 @@ function createPromptSidebar() {
   sidebar.appendChild(header);
   sidebar.appendChild(promptList);
   
-  // Create toggle button for mobile
+  // Create toggle button for mobile/collapsed state
   const toggleButton = document.createElement('div');
   toggleButton.className = 'prompt-bank-toggle';
-  toggleButton.innerHTML = 'PB';
-  toggleButton.addEventListener('click', function() {
-    sidebar.classList.toggle('active');
-  });
+  toggleButton.innerHTML = '×';
+  toggleButton.addEventListener('click', toggleSidebar);
   
   // Try to find the best place to insert the sidebar
   const insertSidebar = () => {
@@ -331,8 +395,17 @@ function createPromptSidebar() {
   };
   
   if (insertSidebar()) {
-    // Load and display prompts
-    loadPrompts();
+    // Load state and apply it
+    loadSidebarState(function(isCollapsed) {
+      if (isCollapsed) {
+        sidebar.classList.add('collapsed');
+        document.body.classList.add('prompt-bank-collapsed');
+        updateToggleButtonText(true);
+      }
+      
+      // Load and display prompts
+      loadPrompts();
+    });
   }
 }
 
@@ -367,8 +440,33 @@ function loadPrompts() {
 
 // Listen for storage changes to update sidebar
 chrome.storage.onChanged.addListener(function(changes, namespace) {
-  if (namespace === 'local' && changes.prompts) {
-    loadPrompts();
+  if (namespace === 'local') {
+    if (changes.prompts) {
+      loadPrompts();
+    }
+    
+    if (changes.sidebarState) {
+      // Only update if the change wasn't triggered by this instance
+      const timestamp = changes.sidebarState.newValue?.timestamp;
+      const currentTimestamp = Date.now();
+      
+      // If it's a recent change (within last second) and not from this instance, apply it
+      if (timestamp && (currentTimestamp - timestamp < 1000)) {
+        const isCollapsed = changes.sidebarState.newValue?.collapsed === true;
+        const sidebar = document.getElementById('prompt-bank-sidebar');
+        
+        if (sidebar) {
+          if (isCollapsed) {
+            sidebar.classList.add('collapsed');
+            document.body.classList.add('prompt-bank-collapsed');
+          } else {
+            sidebar.classList.remove('collapsed');
+            document.body.classList.remove('prompt-bank-collapsed');
+          }
+          updateToggleButtonText(isCollapsed);
+        }
+      }
+    }
   }
 });
 
