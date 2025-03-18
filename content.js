@@ -7,8 +7,13 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     return true; // Keep the message channel open for the async response
   } else if (request.action === 'ping') {
     // Simple ping to check if content script is available
-    console.log('Ping received from popup');
+    console.log('Ping received from background script');
     sendResponse({ success: true, message: 'Content script is active' });
+    return true;
+  } else if (request.action === 'toggleSidebar') {
+    // Toggle the sidebar visibility when extension icon is clicked
+    toggleSidebar();
+    sendResponse({ success: true });
     return true;
   }
 });
@@ -676,8 +681,10 @@ function loadPrompts() {
   const promptList = document.getElementById('prompt-bank-list');
   if (!promptList) return;
   
-  chrome.storage.local.get('prompts', function(data) {
+  // Load settings for compact mode
+  chrome.storage.local.get(['prompts', 'compactMode'], function(data) {
     const prompts = data.prompts || {};
+    const compactMode = data.compactMode || false;
     
     if (Object.keys(prompts).length === 0) {
       promptList.innerHTML = '<p class="prompt-bank-empty">No prompts saved yet.</p>';
@@ -686,6 +693,38 @@ function loadPrompts() {
     
     promptList.innerHTML = '';
     
+    // Create toggle for compact mode
+    const compactToggle = document.createElement('div');
+    compactToggle.className = 'compact-toggle';
+    compactToggle.innerHTML = `
+      <label class="toggle-label">
+        <input type="checkbox" id="compact-mode-toggle" ${compactMode ? 'checked' : ''}>
+        <span>Compact View</span>
+      </label>
+    `;
+    
+    // Add toggle to the list
+    promptList.appendChild(compactToggle);
+    
+    // Add event listener to toggle
+    const toggleCheckbox = compactToggle.querySelector('#compact-mode-toggle');
+    toggleCheckbox.addEventListener('change', function(e) {
+      const isCompact = e.target.checked;
+      
+      // Save the setting
+      chrome.storage.local.set({ compactMode: isCompact });
+      
+      // Apply compact mode to all items
+      const items = document.querySelectorAll('.prompt-bank-item');
+      items.forEach(item => {
+        const preview = item.querySelector('.prompt-preview');
+        if (preview) {
+          preview.style.display = isCompact ? 'none' : 'block';
+        }
+      });
+    });
+    
+    // Create and add each prompt item
     for (const name in prompts) {
       const promptItem = document.createElement('div');
       promptItem.className = 'prompt-bank-item';
@@ -699,16 +738,16 @@ function loadPrompts() {
       const actionsContainer = document.createElement('div');
       actionsContainer.className = 'prompt-actions';
       
-      // Create edit button
+      // Create edit button with title
       const editButton = document.createElement('button');
       editButton.className = 'prompt-edit-btn';
-      editButton.title = 'Edit prompt';
+      editButton.title = 'Edit this prompt';
       editButton.innerHTML = '✎'; // Pencil icon
       
-      // Create delete button
+      // Create delete button with title
       const deleteButton = document.createElement('button');
       deleteButton.className = 'prompt-delete-btn';
-      deleteButton.title = 'Delete prompt';
+      deleteButton.title = 'Delete this prompt';
       deleteButton.innerHTML = '×'; // X icon
       
       // Add event listeners
@@ -730,6 +769,11 @@ function loadPrompts() {
         ? prompts[name].substring(0, 100) + '...' 
         : prompts[name];
       promptPreview.textContent = previewText;
+      
+      // Apply compact mode to the preview if needed
+      if (compactMode) {
+        promptPreview.style.display = 'none';
+      }
       
       // Add elements to containers
       actionsContainer.appendChild(editButton);
@@ -757,6 +801,19 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
   if (namespace === 'local') {
     if (changes.prompts) {
       loadPrompts();
+    }
+    
+    if (changes.compactMode && document.getElementById('prompt-bank-sidebar')) {
+      const isCompact = changes.compactMode.newValue;
+      const items = document.querySelectorAll('.prompt-bank-item .prompt-preview');
+      items.forEach(preview => {
+        preview.style.display = isCompact ? 'none' : 'block';
+      });
+      
+      const toggle = document.getElementById('compact-mode-toggle');
+      if (toggle) {
+        toggle.checked = isCompact;
+      }
     }
     
     if (changes.sidebarState) {
