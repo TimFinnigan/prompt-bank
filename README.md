@@ -6,6 +6,7 @@ A Chrome extension that allows you to save and quickly insert prompts on ChatGPT
 
 - Save, edit, and manage prompts directly from the sidebar
 - Insert prompts directly into ChatGPT's input field with one click
+- Auto-submit option to automatically send prompts to ChatGPT
 - Convenient collapsible sidebar with persistent state
 - Clean UI with intuitive controls (hover actions, collapsible form)
 - Compact view option to hide prompt descriptions
@@ -41,6 +42,20 @@ All functionality is integrated directly into the sidebar:
 ### Inserting Prompts
 
 1. In the "Saved Prompts" list, click on any prompt to insert it directly into the ChatGPT input field
+2. If auto-submit is enabled, the prompt will be automatically sent to ChatGPT
+
+### Auto-Submit Option
+
+1. In the settings section at the top of the "Saved Prompts" list, check the "Auto-Submit Prompts" checkbox
+2. When enabled, clicking any prompt will automatically send it to ChatGPT without requiring you to click the send button
+3. Uncheck this option if you want to review or edit prompts before sending
+4. The setting is saved and persists between page refreshes
+
+### Compact View
+
+1. In the settings section at the top of the "Saved Prompts" list, check the "Compact View" checkbox to hide prompt descriptions
+2. Uncheck it to show descriptions again
+3. The setting is saved and persists between page refreshes
 
 ### Editing Prompts
 
@@ -55,12 +70,6 @@ All functionality is integrated directly into the sidebar:
 1. In the sidebar, hover over the prompt you want to delete in the "Saved Prompts" list
 2. Click the × icon that appears on hover
 3. Confirm the deletion when prompted
-
-### Compact View
-
-1. In the "Saved Prompts" section, check the "Compact View" checkbox to hide prompt descriptions
-2. Uncheck it to show descriptions again
-3. The setting is saved and persists between page refreshes
 
 ### Sidebar Control
 

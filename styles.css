@@ -399,4 +399,36 @@ body:not(.prompt-bank-collapsed) .prompt-bank-toggle {
 .toggle-label span {
   font-size: 14px;
   color: #333;
+}
+
+/* Settings section styles */
+.sidebar-settings {
+  padding: 10px 15px;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 10px;
+  background-color: #f5f5f5;
+}
+
+.sidebar-toggle {
+  margin-bottom: 8px;
+}
+
+.sidebar-toggle:last-child {
+  margin-bottom: 0;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-label input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+.toggle-label span {
+  font-size: 14px;
+  color: #333;
 } 
