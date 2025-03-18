@@ -3,20 +3,17 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('Prompt Bank extension installed');
 });
 
-// Set up messaging between popup and content scripts
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // Relay messages between popup and content scripts if needed
-  if (message.action === 'relayToContent') {
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-      if (tabs && tabs[0] && tabs[0].id) {
-        chrome.tabs.sendMessage(tabs[0].id, message.data, function(response) {
-          sendResponse(response);
-        });
-        return true; // Keep the message channel open for the async response
-      }
-    });
+// When users click the extension icon, navigate to ChatGPT if not already there
+chrome.action.onClicked.addListener((tab) => {
+  const isChatGPT = tab.url && (tab.url.includes('chat.openai.com') || tab.url.includes('chatgpt.com'));
+  
+  if (isChatGPT) {
+    // We're already on ChatGPT, toggle the sidebar
+    chrome.tabs.sendMessage(tab.id, { action: 'toggleSidebar' });
+  } else {
+    // Navigate to ChatGPT
+    chrome.tabs.create({ url: 'https://chat.openai.com/' });
   }
-  return true;
 });
 
 // Listen for tab updates to inject content scripts when on ChatGPT

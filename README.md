@@ -8,8 +8,10 @@ A Chrome extension that allows you to save and quickly insert prompts on ChatGPT
 - Insert prompts directly into ChatGPT's input field with one click
 - Convenient collapsible sidebar with persistent state
 - Clean UI with intuitive controls (hover actions, collapsible form)
+- Compact view option to hide prompt descriptions
 - Compatible with both chat.openai.com and chatgpt.com domains
 - Compatible with the latest ChatGPT interface (using contenteditable div)
+- Improved CSS targeting to avoid conflicts with ChatGPT's own UI
 
 ## Installation
 
@@ -21,7 +23,12 @@ A Chrome extension that allows you to save and quickly insert prompts on ChatGPT
 
 ## Usage
 
-All functionality is now integrated directly into the sidebar for a streamlined experience:
+All functionality is integrated directly into the sidebar:
+
+### Extension Icon
+
+- Click the extension icon to open ChatGPT if you're not already on the site
+- If you're already on ChatGPT, clicking the icon will toggle the sidebar
 
 ### Saving Prompts
 
@@ -49,6 +56,12 @@ All functionality is now integrated directly into the sidebar for a streamlined 
 2. Click the × icon that appears on hover
 3. Confirm the deletion when prompted
 
+### Compact View
+
+1. In the "Saved Prompts" section, check the "Compact View" checkbox to hide prompt descriptions
+2. Uncheck it to show descriptions again
+3. The setting is saved and persists between page refreshes
+
 ### Sidebar Control
 
 - To collapse the sidebar, click the × button at the bottom right
@@ -59,9 +72,9 @@ All functionality is now integrated directly into the sidebar for a streamlined 
 
 If you encounter any issues with the extension, try these solutions:
 
-1. **Error: Receiving end does not exist**
+1. **Sidebar not appearing**
    - Make sure you're on the ChatGPT website (https://chat.openai.com/ or https://chatgpt.com/)
-   - Reload the ChatGPT page to ensure the content script is properly loaded
+   - Reload the page to ensure the content script is properly loaded
    - Check that the extension has the necessary permissions
 
 2. **Prompts not appearing in sidebar**
@@ -69,37 +82,22 @@ If you encounter any issues with the extension, try these solutions:
    - Check if you have any saved prompts by adding a new prompt
 
 3. **Cannot insert prompts**
-   - ChatGPT regularly updates its interface. This extension has been updated to work with the contenteditable div interface (current as of 2023).
-   - Try using the Debug tab for detailed diagnostics
+   - ChatGPT regularly updates its interface. This extension has been updated to work with the contenteditable div interface.
    - Try reloading the page
-   - If problems persist, check the browser console for errors or check for extension updates
+   - If problems persist, check the browser console for errors
 
 4. **Extension not working at all**
    - Disable and re-enable the extension in Chrome's extension settings
    - Try reinstalling the extension
    
 5. **Input text not being inserted correctly**
-   - The extension now supports both old (textarea) and new (contenteditable div and ProseMirror) ChatGPT interfaces
+   - The extension supports both old (textarea) and new (contenteditable div and ProseMirror) ChatGPT interfaces
    - If text is not inserting, it might be due to a ChatGPT interface change
    - Try clicking in the input area first, then click the prompt you want to insert
-   - Use the Debug tab to check for connectivity issues
-
-## Debugging
-
-If you're experiencing issues, the extension includes a Debug tab in the popup with tools to help diagnose problems:
-
-1. Click on the extension icon in your browser toolbar
-2. Click on the "Debug" tab
-3. Use the available tools to diagnose issues
 
 ## Customization
 
 You can modify the styles in `styles.css` to change the appearance of the sidebar.
-
-## Notes
-
-- The icons in the `icons` folder need to be replaced with real icons before publishing.
-- This extension is designed specifically for ChatGPT's web interface and may need updates if ChatGPT changes its DOM structure.
 
 ## License
 

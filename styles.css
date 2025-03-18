@@ -11,8 +11,6 @@
   flex-direction: column;
   overflow: hidden;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-  visibility: visible;
-  opacity: 1;
   transform: translateX(0);
   transition: transform 0.3s ease, opacity 0.3s ease, visibility 0s;
 }
@@ -24,7 +22,8 @@ html.prompt-bank-loading #prompt-bank-sidebar {
 }
 
 #prompt-bank-sidebar.collapsed {
-  transform: translateX(100%);
+  transform: translateX(250px);
+  visibility: hidden;
 }
 
 .prompt-bank-header {
@@ -284,9 +283,8 @@ html.prompt-bank-loading #prompt-bank-sidebar {
 /* In versions of the site where we can't easily adjust the layout,
    we'll use more targeted selectors */
 @media (min-width: 768px) {
-  /* chat.openai.com selectors */
-  body:not(.prompt-bank-collapsed) main,
-  body:not(.prompt-bank-collapsed) #__next > div > div,
+  body:not(.prompt-bank-collapsed) main.relative,
+  body:not(.prompt-bank-collapsed) #__next > div.overflow-hidden > div.relative,
   body:not(.prompt-bank-collapsed) .chat-page {
     margin-right: 250px !important;
     width: auto !important;
@@ -294,55 +292,12 @@ html.prompt-bank-loading #prompt-bank-sidebar {
     transition: margin-right 0.3s ease, max-width 0.3s ease !important;
   }
   
-  body.prompt-bank-collapsed main,
-  body.prompt-bank-collapsed #__next > div > div,
+  body.prompt-bank-collapsed main.relative,
+  body.prompt-bank-collapsed #__next > div.overflow-hidden > div.relative,
   body.prompt-bank-collapsed .chat-page {
     margin-right: 0 !important;
     max-width: 100% !important;
     transition: margin-right 0.3s ease, max-width 0.3s ease !important;
-  }
-  
-  /* Target the specific chat container */
-  body:not(.prompt-bank-collapsed) .flex.flex-col.text-sm {
-    max-width: calc(100% - 250px);
-    margin-right: 250px;
-    transition: margin-right 0.3s ease, max-width 0.3s ease !important;
-  }
-  
-  body.prompt-bank-collapsed .flex.flex-col.text-sm {
-    max-width: 100%;
-    margin-right: 0;
-    transition: margin-right 0.3s ease, max-width 0.3s ease !important;
-  }
-  
-  /* More specific selectors for various ChatGPT DOM structures */
-  main > div > div > div > div {
-    max-width: 100%;
-  }
-  
-  /* chatgpt.com selectors */
-  body:not(.prompt-bank-collapsed) .relative.flex.flex-col.min-h-screen, 
-  body:not(.prompt-bank-collapsed) .overflow-hidden.w-full.h-full.relative.flex.z-0 {
-    margin-right: 250px !important;
-    width: auto !important;
-    transition: margin-right 0.3s ease !important;
-  }
-  
-  body.prompt-bank-collapsed .relative.flex.flex-col.min-h-screen, 
-  body.prompt-bank-collapsed .overflow-hidden.w-full.h-full.relative.flex.z-0 {
-    margin-right: 0 !important;
-    width: auto !important;
-    transition: margin-right 0.3s ease !important;
-  }
-  
-  body:not(.prompt-bank-collapsed) .relative.h-full.w-full.overflow-auto {
-    max-width: calc(100% - 250px) !important;
-    transition: max-width 0.3s ease !important;
-  }
-  
-  body.prompt-bank-collapsed .relative.h-full.w-full.overflow-auto {
-    max-width: 100% !important;
-    transition: max-width 0.3s ease !important;
   }
 }
 
@@ -420,4 +375,28 @@ body:not(.prompt-bank-collapsed) .prompt-bank-toggle {
 
 .status-warning {
   color: #ff9800;
+}
+
+/* Compact view toggle styles */
+.compact-toggle {
+  padding: 10px 15px;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 10px;
+  background-color: #f0f0f0;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-label input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+.toggle-label span {
+  font-size: 14px;
+  color: #333;
 } 

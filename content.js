@@ -1,14 +1,14 @@
-// Listen for messages from the popup
+// Listen for messages from background script
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  if (request.action === 'insertPrompt') {
-    console.log('Received request to insert prompt:', request.text.substring(0, 20) + '...');
-    const success = insertPromptText(request.text);
-    sendResponse({ success: success });
-    return true; // Keep the message channel open for the async response
-  } else if (request.action === 'ping') {
+  if (request.action === 'ping') {
     // Simple ping to check if content script is available
-    console.log('Ping received from popup');
+    console.log('Ping received from background script');
     sendResponse({ success: true, message: 'Content script is active' });
+    return true;
+  } else if (request.action === 'toggleSidebar') {
+    // Toggle the sidebar visibility when extension icon is clicked
+    toggleSidebar();
+    sendResponse({ success: true });
     return true;
   }
 });
@@ -302,32 +302,29 @@ function toggleSidebar() {
   if (!sidebar) return;
   
   const isCurrentlyCollapsed = sidebar.classList.contains('collapsed');
-  const newState = !isCurrentlyCollapsed;
   
-  if (newState) {
-    sidebar.classList.add('collapsed');
-    body.classList.add('prompt-bank-collapsed');
-  } else {
+  // Toggle collapsed state
+  if (isCurrentlyCollapsed) {
     sidebar.classList.remove('collapsed');
     body.classList.remove('prompt-bank-collapsed');
+    console.log('Expanding sidebar');
+  } else {
+    sidebar.classList.add('collapsed');
+    body.classList.add('prompt-bank-collapsed');
+    console.log('Collapsing sidebar');
   }
   
-  // Update toggle button position
-  updateToggleButtonText(newState);
-  
-  // Save the state
-  saveSidebarState(newState);
-}
-
-// Update toggle button text based on state
-function updateToggleButtonText(isCollapsed) {
+  // Update toggle button text
   const toggleButton = document.querySelector('.prompt-bank-toggle');
   if (toggleButton) {
-    toggleButton.innerHTML = isCollapsed ? 'PB' : '×';
+    toggleButton.innerHTML = isCurrentlyCollapsed ? '×' : 'PB';
   }
+  
+  // Save the state with the new collapsed value (opposite of current)
+  saveSidebarState(!isCurrentlyCollapsed);
 }
 
-// Create a sidebar for prompts
+// Load and initialize sidebar
 function createPromptSidebar() {
   // Check if sidebar already exists
   if (document.getElementById('prompt-bank-sidebar')) {
@@ -676,8 +673,10 @@ function loadPrompts() {
   const promptList = document.getElementById('prompt-bank-list');
   if (!promptList) return;
   
-  chrome.storage.local.get('prompts', function(data) {
+  // Load settings for compact mode
+  chrome.storage.local.get(['prompts', 'compactMode'], function(data) {
     const prompts = data.prompts || {};
+    const compactMode = data.compactMode || false;
     
     if (Object.keys(prompts).length === 0) {
       promptList.innerHTML = '<p class="prompt-bank-empty">No prompts saved yet.</p>';
@@ -686,6 +685,38 @@ function loadPrompts() {
     
     promptList.innerHTML = '';
     
+    // Create toggle for compact mode
+    const compactToggle = document.createElement('div');
+    compactToggle.className = 'compact-toggle';
+    compactToggle.innerHTML = `
+      <label class="toggle-label">
+        <input type="checkbox" id="compact-mode-toggle" ${compactMode ? 'checked' : ''}>
+        <span>Compact View</span>
+      </label>
+    `;
+    
+    // Add toggle to the list
+    promptList.appendChild(compactToggle);
+    
+    // Add event listener to toggle
+    const toggleCheckbox = compactToggle.querySelector('#compact-mode-toggle');
+    toggleCheckbox.addEventListener('change', function(e) {
+      const isCompact = e.target.checked;
+      
+      // Save the setting
+      chrome.storage.local.set({ compactMode: isCompact });
+      
+      // Apply compact mode to all items
+      const items = document.querySelectorAll('.prompt-bank-item');
+      items.forEach(item => {
+        const preview = item.querySelector('.prompt-preview');
+        if (preview) {
+          preview.style.display = isCompact ? 'none' : 'block';
+        }
+      });
+    });
+    
+    // Create and add each prompt item
     for (const name in prompts) {
       const promptItem = document.createElement('div');
       promptItem.className = 'prompt-bank-item';
@@ -699,16 +730,16 @@ function loadPrompts() {
       const actionsContainer = document.createElement('div');
       actionsContainer.className = 'prompt-actions';
       
-      // Create edit button
+      // Create edit button with title
       const editButton = document.createElement('button');
       editButton.className = 'prompt-edit-btn';
-      editButton.title = 'Edit prompt';
+      editButton.title = 'Edit this prompt';
       editButton.innerHTML = '✎'; // Pencil icon
       
-      // Create delete button
+      // Create delete button with title
       const deleteButton = document.createElement('button');
       deleteButton.className = 'prompt-delete-btn';
-      deleteButton.title = 'Delete prompt';
+      deleteButton.title = 'Delete this prompt';
       deleteButton.innerHTML = '×'; // X icon
       
       // Add event listeners
@@ -730,6 +761,11 @@ function loadPrompts() {
         ? prompts[name].substring(0, 100) + '...' 
         : prompts[name];
       promptPreview.textContent = previewText;
+      
+      // Apply compact mode to the preview if needed
+      if (compactMode) {
+        promptPreview.style.display = 'none';
+      }
       
       // Add elements to containers
       actionsContainer.appendChild(editButton);
@@ -759,6 +795,19 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
       loadPrompts();
     }
     
+    if (changes.compactMode && document.getElementById('prompt-bank-sidebar')) {
+      const isCompact = changes.compactMode.newValue;
+      const items = document.querySelectorAll('.prompt-bank-item .prompt-preview');
+      items.forEach(preview => {
+        preview.style.display = isCompact ? 'none' : 'block';
+      });
+      
+      const toggle = document.getElementById('compact-mode-toggle');
+      if (toggle) {
+        toggle.checked = isCompact;
+      }
+    }
+    
     if (changes.sidebarState) {
       // Only update if the change wasn't triggered by this instance
       const timestamp = changes.sidebarState.newValue?.timestamp;
@@ -768,6 +817,7 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
       if (timestamp && (currentTimestamp - timestamp < 1000)) {
         const isCollapsed = changes.sidebarState.newValue?.collapsed === true;
         const sidebar = document.getElementById('prompt-bank-sidebar');
+        const toggleButton = document.querySelector('.prompt-bank-toggle');
         
         if (sidebar) {
           if (isCollapsed) {
@@ -777,7 +827,10 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
             sidebar.classList.remove('collapsed');
             document.body.classList.remove('prompt-bank-collapsed');
           }
-          updateToggleButtonText(isCollapsed);
+          
+          if (toggleButton) {
+            toggleButton.innerHTML = isCollapsed ? 'PB' : '×';
+          }
         }
       }
     }
