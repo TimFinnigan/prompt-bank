@@ -14,9 +14,9 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 });
 
 // Function to insert text into ChatGPT's input field
-function insertPromptText(text) {
+function insertPromptText(text, autoSubmit = false) {
   try {
-    console.log('Attempting to insert prompt text');
+    console.log('Attempting to insert prompt text', autoSubmit ? 'with auto-submit' : 'without auto-submit');
     
     // Try to find contenteditable div first (new ChatGPT interface)
     let inputElement = document.getElementById('prompt-textarea');
@@ -90,6 +90,12 @@ function insertPromptText(text) {
       inputElement.focus();
       
       console.log('Used ProseMirror method');
+      
+      // Find and potentially click the send button if auto-submit is enabled
+      if (autoSubmit) {
+        handleAutoSubmit();
+      }
+      
       return true;
     }
     
@@ -129,6 +135,11 @@ function insertPromptText(text) {
       const inputEvent = new Event('input', { bubbles: true });
       inputElement.dispatchEvent(inputEvent);
       console.log('Used textarea method');
+      
+      // Find and potentially click the send button if auto-submit is enabled
+      if (autoSubmit) {
+        handleAutoSubmit();
+      }
     } else {
       // For contenteditable divs - try multiple methods
       
@@ -231,41 +242,50 @@ function insertPromptText(text) {
         }
         inputElement.dispatchEvent(event);
       });
+      
+      // Focus the input element
+      inputElement.focus();
+      
+      // Find and potentially click the send button if auto-submit is enabled
+      if (autoSubmit) {
+        handleAutoSubmit();
+      }
     }
     
-    // Focus the input element
-    inputElement.focus();
-    
-    // Try to find and enable the send button if it exists
-    const sendButton = document.querySelector('button[data-testid="send-button"]') || 
-                      document.querySelector('button.absolute.p-1') ||
-                      document.querySelector('button.absolute.bottom-2.right-2') ||
-                      document.querySelector('button[aria-label="Send message"]') ||
-                      Array.from(document.querySelectorAll('button')).find(btn => 
-                        btn.textContent.includes('Send') || 
-                        btn.innerHTML.includes('paper-airplane') ||
-                        btn.innerHTML.includes('send')
-                      );
-    
-    if (sendButton) {
-      console.log('Found send button:', sendButton);
-      if (sendButton.disabled === true) {
-        console.log('Enabling disabled send button');
-        sendButton.disabled = false;
-      }
-      
-      // Try to click the send button automatically
+    // Function to handle auto-submit
+    function handleAutoSubmit() {
       setTimeout(() => {
         try {
-          // Uncomment this if you want the extension to automatically send the message
-          // sendButton.click();
-          console.log('Ready to send');
+          // Find the send button
+          const sendButton = document.querySelector('button[data-testid="send-button"]') || 
+                            document.querySelector('button.absolute.p-1') ||
+                            document.querySelector('button.absolute.bottom-2.right-2') ||
+                            document.querySelector('button[aria-label="Send message"]') ||
+                            Array.from(document.querySelectorAll('button')).find(btn => 
+                              btn.textContent.includes('Send') || 
+                              btn.innerHTML.includes('paper-airplane') ||
+                              btn.innerHTML.includes('send')
+                            );
+          
+          if (sendButton) {
+            console.log('Found send button for auto-submit:', sendButton);
+            
+            // Enable the button if it's disabled
+            if (sendButton.disabled === true) {
+              console.log('Enabling disabled send button');
+              sendButton.disabled = false;
+            }
+            
+            // Click the send button
+            console.log('Auto-submitting prompt');
+            sendButton.click();
+          } else {
+            console.log('No send button found for auto-submit');
+          }
         } catch (e) {
-          console.error('Error clicking send button:', e);
+          console.error('Error during auto-submit:', e);
         }
-      }, 500);
-    } else {
-      console.log('No send button found');
+      }, 500); // Wait a bit for the input to be properly registered
     }
     
     console.log('Prompt insertion complete');
@@ -673,10 +693,11 @@ function loadPrompts() {
   const promptList = document.getElementById('prompt-bank-list');
   if (!promptList) return;
   
-  // Load settings for compact mode
-  chrome.storage.local.get(['prompts', 'compactMode'], function(data) {
+  // Load settings for compact mode and auto-submit
+  chrome.storage.local.get(['prompts', 'compactMode', 'autoSubmit'], function(data) {
     const prompts = data.prompts || {};
     const compactMode = data.compactMode || false;
+    const autoSubmit = data.autoSubmit || false;
     
     if (Object.keys(prompts).length === 0) {
       promptList.innerHTML = '<p class="prompt-bank-empty">No prompts saved yet.</p>';
@@ -685,9 +706,13 @@ function loadPrompts() {
     
     promptList.innerHTML = '';
     
-    // Create toggle for compact mode
+    // Create settings section with toggles
+    const settingsSection = document.createElement('div');
+    settingsSection.className = 'sidebar-settings';
+    
+    // Compact mode toggle
     const compactToggle = document.createElement('div');
-    compactToggle.className = 'compact-toggle';
+    compactToggle.className = 'sidebar-toggle';
     compactToggle.innerHTML = `
       <label class="toggle-label">
         <input type="checkbox" id="compact-mode-toggle" ${compactMode ? 'checked' : ''}>
@@ -695,12 +720,26 @@ function loadPrompts() {
       </label>
     `;
     
-    // Add toggle to the list
-    promptList.appendChild(compactToggle);
+    // Auto-submit toggle
+    const autoSubmitToggle = document.createElement('div');
+    autoSubmitToggle.className = 'sidebar-toggle';
+    autoSubmitToggle.innerHTML = `
+      <label class="toggle-label">
+        <input type="checkbox" id="auto-submit-toggle" ${autoSubmit ? 'checked' : ''}>
+        <span>Auto-Submit Prompts</span>
+      </label>
+    `;
     
-    // Add event listener to toggle
-    const toggleCheckbox = compactToggle.querySelector('#compact-mode-toggle');
-    toggleCheckbox.addEventListener('change', function(e) {
+    // Add toggles to settings section
+    settingsSection.appendChild(compactToggle);
+    settingsSection.appendChild(autoSubmitToggle);
+    
+    // Add settings section to the list
+    promptList.appendChild(settingsSection);
+    
+    // Add event listener to compact mode toggle
+    const compactToggleCheckbox = compactToggle.querySelector('#compact-mode-toggle');
+    compactToggleCheckbox.addEventListener('change', function(e) {
       const isCompact = e.target.checked;
       
       // Save the setting
@@ -714,6 +753,15 @@ function loadPrompts() {
           preview.style.display = isCompact ? 'none' : 'block';
         }
       });
+    });
+    
+    // Add event listener to auto-submit toggle
+    const autoSubmitToggleCheckbox = autoSubmitToggle.querySelector('#auto-submit-toggle');
+    autoSubmitToggleCheckbox.addEventListener('change', function(e) {
+      const isAutoSubmit = e.target.checked;
+      
+      // Save the setting
+      chrome.storage.local.set({ autoSubmit: isAutoSubmit });
     });
     
     // Create and add each prompt item
@@ -780,7 +828,9 @@ function loadPrompts() {
       
       // Add click event to insert the prompt
       promptItem.addEventListener('click', function() {
-        insertPromptText(prompts[name]);
+        // Check if auto-submit is enabled (read from current state of checkbox)
+        const autoSubmitEnabled = document.getElementById('auto-submit-toggle')?.checked || false;
+        insertPromptText(prompts[name], autoSubmitEnabled);
       });
       
       promptList.appendChild(promptItem);
@@ -805,6 +855,14 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
       const toggle = document.getElementById('compact-mode-toggle');
       if (toggle) {
         toggle.checked = isCompact;
+      }
+    }
+    
+    if (changes.autoSubmit && document.getElementById('prompt-bank-sidebar')) {
+      const isAutoSubmit = changes.autoSubmit.newValue;
+      const toggle = document.getElementById('auto-submit-toggle');
+      if (toggle) {
+        toggle.checked = isAutoSubmit;
       }
     }
     
