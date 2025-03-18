@@ -1,11 +1,6 @@
-// Listen for messages from the popup
+// Listen for messages from background script
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  if (request.action === 'insertPrompt') {
-    console.log('Received request to insert prompt:', request.text.substring(0, 20) + '...');
-    const success = insertPromptText(request.text);
-    sendResponse({ success: success });
-    return true; // Keep the message channel open for the async response
-  } else if (request.action === 'ping') {
+  if (request.action === 'ping') {
     // Simple ping to check if content script is available
     console.log('Ping received from background script');
     sendResponse({ success: true, message: 'Content script is active' });
@@ -307,32 +302,29 @@ function toggleSidebar() {
   if (!sidebar) return;
   
   const isCurrentlyCollapsed = sidebar.classList.contains('collapsed');
-  const newState = !isCurrentlyCollapsed;
   
-  if (newState) {
-    sidebar.classList.add('collapsed');
-    body.classList.add('prompt-bank-collapsed');
-  } else {
+  // Toggle collapsed state
+  if (isCurrentlyCollapsed) {
     sidebar.classList.remove('collapsed');
     body.classList.remove('prompt-bank-collapsed');
+    console.log('Expanding sidebar');
+  } else {
+    sidebar.classList.add('collapsed');
+    body.classList.add('prompt-bank-collapsed');
+    console.log('Collapsing sidebar');
   }
   
-  // Update toggle button position
-  updateToggleButtonText(newState);
-  
-  // Save the state
-  saveSidebarState(newState);
-}
-
-// Update toggle button text based on state
-function updateToggleButtonText(isCollapsed) {
+  // Update toggle button text
   const toggleButton = document.querySelector('.prompt-bank-toggle');
   if (toggleButton) {
-    toggleButton.innerHTML = isCollapsed ? 'PB' : '×';
+    toggleButton.innerHTML = isCurrentlyCollapsed ? '×' : 'PB';
   }
+  
+  // Save the state with the new collapsed value (opposite of current)
+  saveSidebarState(!isCurrentlyCollapsed);
 }
 
-// Create a sidebar for prompts
+// Load and initialize sidebar
 function createPromptSidebar() {
   // Check if sidebar already exists
   if (document.getElementById('prompt-bank-sidebar')) {
@@ -825,6 +817,7 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
       if (timestamp && (currentTimestamp - timestamp < 1000)) {
         const isCollapsed = changes.sidebarState.newValue?.collapsed === true;
         const sidebar = document.getElementById('prompt-bank-sidebar');
+        const toggleButton = document.querySelector('.prompt-bank-toggle');
         
         if (sidebar) {
           if (isCollapsed) {
@@ -834,7 +827,10 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
             sidebar.classList.remove('collapsed');
             document.body.classList.remove('prompt-bank-collapsed');
           }
-          updateToggleButtonText(isCollapsed);
+          
+          if (toggleButton) {
+            toggleButton.innerHTML = isCollapsed ? 'PB' : '×';
+          }
         }
       }
     }

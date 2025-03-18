@@ -11,6 +11,7 @@ A Chrome extension that allows you to save and quickly insert prompts on ChatGPT
 - Compact view option to hide prompt descriptions
 - Compatible with both chat.openai.com and chatgpt.com domains
 - Compatible with the latest ChatGPT interface (using contenteditable div)
+- Improved CSS targeting to avoid conflicts with ChatGPT's own UI
 
 ## Installation
 
