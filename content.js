@@ -18,6 +18,9 @@ function insertPromptText(text, autoSubmit = false) {
   try {
     console.log('Attempting to insert prompt text', autoSubmit ? 'with auto-submit' : 'without auto-submit');
     
+    // Add a newline at the end of the text to position cursor on a new line
+    text = text + '\n\n';
+    
     // Try to find contenteditable div first (new ChatGPT interface)
     let inputElement = document.getElementById('prompt-textarea');
     
@@ -74,10 +77,20 @@ function insertPromptText(text, autoSubmit = false) {
       // Clear existing content
       inputElement.innerHTML = '';
       
-      // ProseMirror uses <p> elements for paragraphs
-      const paragraph = document.createElement('p');
-      paragraph.textContent = text;
-      inputElement.appendChild(paragraph);
+      // Handle text with newlines - split into paragraphs
+      const lines = text.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const paragraph = document.createElement('p');
+        
+        if (lines[i].trim() === '') {
+          // For empty lines, use a <br> to maintain the space
+          paragraph.innerHTML = '<br>';
+        } else {
+          paragraph.textContent = lines[i];
+        }
+        
+        inputElement.appendChild(paragraph);
+      }
       
       // Dispatch input event
       const inputEvent = new InputEvent('input', {
@@ -86,8 +99,21 @@ function insertPromptText(text, autoSubmit = false) {
       });
       inputElement.dispatchEvent(inputEvent);
       
-      // Focus the element
+      // Focus the element and move cursor to the end
       inputElement.focus();
+      
+      // Place cursor at the very end
+      const selection = window.getSelection();
+      const range = document.createRange();
+      
+      // Select the last paragraph
+      const lastParagraphIndex = Math.max(0, inputElement.childNodes.length - 1);
+      const lastParagraph = inputElement.childNodes[lastParagraphIndex];
+      
+      range.selectNodeContents(lastParagraph);
+      range.collapse(false); // collapse to end
+      selection.removeAllRanges();
+      selection.addRange(range);
       
       console.log('Used ProseMirror method');
       
@@ -134,6 +160,11 @@ function insertPromptText(text, autoSubmit = false) {
       inputElement.value = text;
       const inputEvent = new Event('input', { bubbles: true });
       inputElement.dispatchEvent(inputEvent);
+      
+      // Move cursor to the end of the textarea
+      inputElement.focus();
+      inputElement.selectionStart = inputElement.selectionEnd = inputElement.value.length;
+      
       console.log('Used textarea method');
       
       // Find and potentially click the send button if auto-submit is enabled
@@ -192,29 +223,17 @@ function insertPromptText(text, autoSubmit = false) {
             // Create and insert text node with proper formatting
             const lines = text.split('\n');
             
-            // For the first line
-            if (lines.length > 0) {
-              const firstParagraph = document.createElement('p');
-              firstParagraph.textContent = lines[0];
-              inputElement.appendChild(firstParagraph);
-              
-              // For additional lines
-              for (let i = 1; i < lines.length; i++) {
-                if (lines[i].trim() !== '') {
-                  const paragraph = document.createElement('p');
-                  paragraph.textContent = lines[i];
-                  inputElement.appendChild(paragraph);
-                } else {
-                  // For empty lines
-                  inputElement.appendChild(document.createElement('br'));
-                }
-              }
-            } else {
-              // If the input is empty, insert a paragraph anyway
+            // For each line of text
+            for (let i = 0; i < lines.length; i++) {
               const paragraph = document.createElement('p');
-              paragraph.innerHTML = '<br>';
+              if (lines[i].trim() === '') {
+                paragraph.innerHTML = '<br>';
+              } else {
+                paragraph.textContent = lines[i];
+              }
               inputElement.appendChild(paragraph);
             }
+            
             console.log('Used innerHTML method');
           }
         });
@@ -243,8 +262,19 @@ function insertPromptText(text, autoSubmit = false) {
         inputElement.dispatchEvent(event);
       });
       
-      // Focus the input element
+      // Focus the input element and move cursor to the end
       inputElement.focus();
+      
+      // Move cursor to end for contenteditable div
+      const selection = window.getSelection();
+      const range = document.createRange();
+      
+      if (inputElement.lastChild) {
+        range.selectNodeContents(inputElement.lastChild);
+        range.collapse(false); // collapse to end
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
       
       // Find and potentially click the send button if auto-submit is enabled
       if (autoSubmit) {
