@@ -121,6 +121,21 @@ button:hover {
   position: absolute;
   top: 8px;
   right: 8px;
+  gap: 5px;
+}
+
+.edit-btn {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.edit-btn:hover {
+  background-color: #2980b9;
 }
 
 .delete-btn {

@@ -4,11 +4,10 @@ A Chrome extension that allows you to save and quickly insert prompts on ChatGPT
 
 ## Features
 
-- Save frequently used prompts with custom names
+- Save, edit, and manage prompts directly from the sidebar
 - Insert prompts directly into ChatGPT's input field with one click
-- View and manage your saved prompts
-- Convenient sidebar on ChatGPT's website for quick access
-- Collapsible sidebar with persistent state
+- Convenient collapsible sidebar with persistent state
+- Clean UI with intuitive controls (hover actions, collapsible form)
 - Compatible with both chat.openai.com and chatgpt.com domains
 - Compatible with the latest ChatGPT interface (using contenteditable div)
 
@@ -22,35 +21,39 @@ A Chrome extension that allows you to save and quickly insert prompts on ChatGPT
 
 ## Usage
 
+All functionality is now integrated directly into the sidebar for a streamlined experience:
+
 ### Saving Prompts
 
-1. Click on the Prompt Bank extension icon in your toolbar
-2. Enter a name for your prompt in the "Prompt Name" field
-3. Enter or paste your prompt text in the text area
-4. Click "Save Prompt"
+1. When visiting ChatGPT, a sidebar will appear on the right side of the page
+2. Click "Add New Prompt" to expand the form
+3. Enter a name for your prompt in the "Prompt Name" field
+4. Enter or paste your prompt text in the text area below
+5. Click "Save Prompt"
 
 ### Inserting Prompts
 
-**Method 1: From the extension popup**
-1. Click on the Prompt Bank extension icon in your toolbar
-2. Click on the "Withdraw" tab
-3. Click on any saved prompt to insert it into ChatGPT's input field
+1. In the "Saved Prompts" list, click on any prompt to insert it directly into the ChatGPT input field
 
-**Method 2: From the sidebar**
-1. When visiting ChatGPT, a sidebar will appear on the right side of the page
-2. Click on any prompt in the sidebar to insert it directly into the input field
-3. To collapse the sidebar, click the « icon in the header or the × button at the bottom right
-4. To expand a collapsed sidebar, click the "PB" button at the bottom right
+### Editing Prompts
+
+1. In the sidebar, hover over the prompt you want to edit in the "Saved Prompts" list
+2. Click the pencil (✎) icon that appears on hover
+3. The prompt details will be loaded into the form at the top of the sidebar
+4. Make your changes and click "Update Prompt"
+5. To cancel editing, click the "Cancel" button
 
 ### Deleting Prompts
 
-1. Click on the Prompt Bank extension icon in your toolbar
-2. Click on the "Withdraw" tab
-3. Click the "Delete" button next to the prompt you want to remove
+1. In the sidebar, hover over the prompt you want to delete in the "Saved Prompts" list
+2. Click the × icon that appears on hover
+3. Confirm the deletion when prompted
 
-### Sidebar State
+### Sidebar Control
 
-The sidebar's collapsed/expanded state is remembered between page loads and browser sessions. When you collapse the sidebar, it will stay collapsed until you expand it again.
+- To collapse the sidebar, click the × button at the bottom right
+- To expand a collapsed sidebar, click the "PB" button at the bottom right
+- The sidebar's collapsed/expanded state is remembered between page loads
 
 ## Troubleshooting
 
@@ -63,7 +66,7 @@ If you encounter any issues with the extension, try these solutions:
 
 2. **Prompts not appearing in sidebar**
    - Reload the ChatGPT page
-   - Check if you have any saved prompts by clicking on the extension icon
+   - Check if you have any saved prompts by adding a new prompt
 
 3. **Cannot insert prompts**
    - ChatGPT regularly updates its interface. This extension has been updated to work with the contenteditable div interface (current as of 2023).
@@ -83,11 +86,11 @@ If you encounter any issues with the extension, try these solutions:
 
 ## Debugging
 
-If you're experiencing issues, the extension includes a Debug tab with tools to help diagnose problems:
+If you're experiencing issues, the extension includes a Debug tab in the popup with tools to help diagnose problems:
 
-1. **Test Insert**: Tests the ability to insert a test message into the ChatGPT input field
-2. **Reload ChatGPT**: Reloads the current ChatGPT page
-3. **Check Connection**: Checks if the extension can communicate with the ChatGPT page
+1. Click on the extension icon in your browser toolbar
+2. Click on the "Debug" tab
+3. Use the available tools to diagnose issues
 
 ## Customization
 

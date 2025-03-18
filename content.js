@@ -325,14 +325,9 @@ function updateToggleButtonText(isCollapsed) {
   if (toggleButton) {
     toggleButton.innerHTML = isCollapsed ? 'PB' : '×';
   }
-  
-  const collapseToggle = document.querySelector('.collapse-toggle');
-  if (collapseToggle) {
-    collapseToggle.innerHTML = isCollapsed ? '»' : '«';
-  }
 }
 
-// Add a sidebar for prompts
+// Create a sidebar for prompts
 function createPromptSidebar() {
   // Check if sidebar already exists
   if (document.getElementById('prompt-bank-sidebar')) {
@@ -357,21 +352,110 @@ function createPromptSidebar() {
     const title = document.createElement('h2');
     title.textContent = 'Prompt Bank';
     
-    const collapseToggle = document.createElement('div');
-    collapseToggle.className = 'collapse-toggle';
-    collapseToggle.innerHTML = isCollapsed ? '»' : '«';
-    collapseToggle.addEventListener('click', toggleSidebar);
-    
     header.appendChild(title);
-    header.appendChild(collapseToggle);
     
-    // Create prompt list container
+    // Create "Add New Prompt" toggle
+    const addPromptToggle = document.createElement('div');
+    addPromptToggle.className = 'add-prompt-toggle collapsed';
+    
+    const toggleText = document.createElement('span');
+    toggleText.textContent = 'Add New Prompt';
+    
+    const toggleIcon = document.createElement('span');
+    toggleIcon.className = 'toggle-icon';
+    toggleIcon.innerHTML = '&#9650;'; // Upward arrow
+    
+    addPromptToggle.appendChild(toggleText);
+    addPromptToggle.appendChild(toggleIcon);
+    
+    // Add event listener to toggle
+    addPromptToggle.addEventListener('click', function() {
+      const form = document.querySelector('.prompt-bank-form');
+      const isFormCollapsed = this.classList.contains('collapsed');
+      
+      if (isFormCollapsed) {
+        this.classList.remove('collapsed');
+        form.classList.remove('collapsed');
+      } else {
+        this.classList.add('collapsed');
+        form.classList.add('collapsed');
+      }
+    });
+    
+    // Create save form (initially collapsed)
+    const saveForm = document.createElement('div');
+    saveForm.className = 'prompt-bank-form collapsed';
+    
+    // Create prompt name input
+    const nameInputContainer = document.createElement('div');
+    nameInputContainer.className = 'input-container';
+    
+    const promptNameInput = document.createElement('input');
+    promptNameInput.type = 'text';
+    promptNameInput.id = 'sidebar-prompt-name';
+    promptNameInput.placeholder = 'Prompt Name';
+    
+    nameInputContainer.appendChild(promptNameInput);
+    
+    // Create prompt text input
+    const textInputContainer = document.createElement('div');
+    textInputContainer.className = 'input-container';
+    
+    const promptTextInput = document.createElement('textarea');
+    promptTextInput.id = 'sidebar-prompt-text';
+    promptTextInput.placeholder = 'Prompt Text';
+    
+    textInputContainer.appendChild(promptTextInput);
+    
+    // Create save button
+    const saveButtonContainer = document.createElement('div');
+    saveButtonContainer.className = 'button-container';
+    
+    const saveButton = document.createElement('button');
+    saveButton.id = 'sidebar-save-button';
+    saveButton.className = 'save-btn';
+    saveButton.textContent = 'Save Prompt';
+    
+    // Add cancel button (hidden by default, shown during edit)
+    const cancelButton = document.createElement('button');
+    cancelButton.id = 'sidebar-cancel-button';
+    cancelButton.className = 'cancel-btn';
+    cancelButton.textContent = 'Cancel';
+    cancelButton.style.display = 'none';
+    
+    saveButtonContainer.appendChild(saveButton);
+    saveButtonContainer.appendChild(cancelButton);
+    
+    // Add status message
+    const statusMessage = document.createElement('div');
+    statusMessage.id = 'sidebar-status-message';
+    statusMessage.className = 'status-message';
+    
+    // Add elements to save form
+    saveForm.appendChild(nameInputContainer);
+    saveForm.appendChild(textInputContainer);
+    saveForm.appendChild(saveButtonContainer);
+    saveForm.appendChild(statusMessage);
+    
+    // Create prompt list container with a title
+    const promptListContainer = document.createElement('div');
+    promptListContainer.className = 'prompt-bank-list-container';
+    
+    const promptListTitle = document.createElement('h3');
+    promptListTitle.textContent = 'Saved Prompts';
+    promptListTitle.className = 'prompt-list-title';
+    
     const promptList = document.createElement('div');
     promptList.id = 'prompt-bank-list';
     
+    promptListContainer.appendChild(promptListTitle);
+    promptListContainer.appendChild(promptList);
+    
     // Add elements to sidebar
     sidebar.appendChild(header);
-    sidebar.appendChild(promptList);
+    sidebar.appendChild(addPromptToggle);
+    sidebar.appendChild(saveForm);
+    sidebar.appendChild(promptListContainer);
     
     // Create toggle button for mobile/collapsed state
     const toggleButton = document.createElement('div');
@@ -407,10 +491,184 @@ function createPromptSidebar() {
     };
     
     if (insertSidebar()) {
+      // Set up save button event listener
+      setupSaveButtonListener();
+      
+      // Set up cancel button event listener
+      setupCancelButtonListener();
+      
       // Load and display prompts
       loadPrompts();
     }
   });
+}
+
+// Set up the save button listener
+function setupSaveButtonListener() {
+  const saveButton = document.getElementById('sidebar-save-button');
+  const promptNameInput = document.getElementById('sidebar-prompt-name');
+  const promptTextInput = document.getElementById('sidebar-prompt-text');
+  const statusMessage = document.getElementById('sidebar-status-message');
+  const cancelButton = document.getElementById('sidebar-cancel-button');
+  
+  if (!saveButton || !promptNameInput || !promptTextInput || !statusMessage) return;
+  
+  saveButton.addEventListener('click', function() {
+    const name = promptNameInput.value.trim();
+    const text = promptTextInput.value.trim();
+    
+    if (!name || !text) {
+      statusMessage.textContent = 'Please enter both a name and prompt text.';
+      statusMessage.className = 'status-message error';
+      return;
+    }
+    
+    chrome.storage.local.get('prompts', function(data) {
+      const prompts = data.prompts || {};
+      
+      // Check if we're editing an existing prompt
+      const isEditing = saveButton.getAttribute('data-editing') === 'true';
+      const originalName = saveButton.getAttribute('data-original-name');
+      
+      // If editing and name changed, remove the old prompt
+      if (isEditing && originalName && originalName !== name) {
+        delete prompts[originalName];
+      }
+      
+      // Check if prompt name already exists and we're not editing the same name
+      if (!isEditing && prompts[name] && !confirm(`A prompt named "${name}" already exists. Do you want to overwrite it?`)) {
+        return;
+      }
+      
+      // Save the prompt
+      prompts[name] = text;
+      
+      chrome.storage.local.set({ prompts: prompts }, function() {
+        // Show success message
+        statusMessage.textContent = 'Prompt saved successfully!';
+        statusMessage.className = 'status-message success';
+        
+        // Clear inputs
+        promptNameInput.value = '';
+        promptTextInput.value = '';
+        
+        // Reset editing state
+        saveButton.textContent = 'Save Prompt';
+        saveButton.removeAttribute('data-editing');
+        saveButton.removeAttribute('data-original-name');
+        cancelButton.style.display = 'none';
+        
+        // Clear message after delay
+        setTimeout(function() {
+          statusMessage.textContent = '';
+          statusMessage.className = 'status-message';
+        }, 3000);
+        
+        // Reload prompts list
+        loadPrompts();
+      });
+    });
+  });
+}
+
+// Set up the cancel button listener
+function setupCancelButtonListener() {
+  const cancelButton = document.getElementById('sidebar-cancel-button');
+  const saveButton = document.getElementById('sidebar-save-button');
+  const promptNameInput = document.getElementById('sidebar-prompt-name');
+  const promptTextInput = document.getElementById('sidebar-prompt-text');
+  const statusMessage = document.getElementById('sidebar-status-message');
+  
+  if (!cancelButton || !saveButton || !promptNameInput || !promptTextInput || !statusMessage) return;
+  
+  cancelButton.addEventListener('click', function() {
+    // Clear inputs
+    promptNameInput.value = '';
+    promptTextInput.value = '';
+    
+    // Reset editing state
+    saveButton.textContent = 'Save Prompt';
+    saveButton.removeAttribute('data-editing');
+    saveButton.removeAttribute('data-original-name');
+    cancelButton.style.display = 'none';
+    
+    // Clear message
+    statusMessage.textContent = '';
+    statusMessage.className = 'status-message';
+    
+    // Toggle form if we're just canceling an edit
+    const form = document.querySelector('.prompt-bank-form');
+    const toggle = document.querySelector('.add-prompt-toggle');
+    form.classList.add('collapsed');
+    toggle.classList.add('collapsed');
+  });
+}
+
+// Edit a prompt from the sidebar
+function editPrompt(name, text) {
+  const promptNameInput = document.getElementById('sidebar-prompt-name');
+  const promptTextInput = document.getElementById('sidebar-prompt-text');
+  const saveButton = document.getElementById('sidebar-save-button');
+  const cancelButton = document.getElementById('sidebar-cancel-button');
+  const statusMessage = document.getElementById('sidebar-status-message');
+  
+  if (!promptNameInput || !promptTextInput || !saveButton || !statusMessage || !cancelButton) return;
+  
+  // Make sure form is visible
+  const form = document.querySelector('.prompt-bank-form');
+  const toggle = document.querySelector('.add-prompt-toggle');
+  if (form.classList.contains('collapsed')) {
+    form.classList.remove('collapsed');
+    toggle.classList.remove('collapsed');
+  }
+  
+  // Fill in the form with existing prompt
+  promptNameInput.value = name;
+  promptTextInput.value = text;
+  
+  // Set editing state
+  saveButton.textContent = 'Update Prompt';
+  saveButton.setAttribute('data-editing', 'true');
+  saveButton.setAttribute('data-original-name', name);
+  cancelButton.style.display = 'inline-block';
+  
+  // Show message to user
+  statusMessage.textContent = 'Editing prompt: "' + name + '".';
+  statusMessage.className = 'status-message info';
+  
+  // Scroll to the top of the sidebar to see the form
+  const sidebar = document.getElementById('prompt-bank-sidebar');
+  if (sidebar) sidebar.scrollTop = 0;
+}
+
+// Delete a prompt from the sidebar
+function deletePrompt(name) {
+  if (confirm(`Are you sure you want to delete the prompt "${name}"?`)) {
+    chrome.storage.local.get('prompts', function(data) {
+      const prompts = data.prompts || {};
+      
+      if (prompts[name]) {
+        delete prompts[name];
+        
+        chrome.storage.local.set({ prompts: prompts }, function() {
+          // Reload prompts
+          loadPrompts();
+          
+          // Show success message
+          const statusMessage = document.getElementById('sidebar-status-message');
+          if (statusMessage) {
+            statusMessage.textContent = `Deleted prompt: "${name}"`;
+            statusMessage.className = 'status-message success';
+            
+            setTimeout(function() {
+              statusMessage.textContent = '';
+              statusMessage.className = 'status-message';
+            }, 3000);
+          }
+        });
+      }
+    });
+  }
 }
 
 // Load prompts from storage and display in sidebar
@@ -431,8 +689,60 @@ function loadPrompts() {
     for (const name in prompts) {
       const promptItem = document.createElement('div');
       promptItem.className = 'prompt-bank-item';
-      promptItem.textContent = name;
       
+      // Create prompt name element
+      const promptName = document.createElement('div');
+      promptName.className = 'prompt-name';
+      promptName.textContent = name;
+      
+      // Create actions container
+      const actionsContainer = document.createElement('div');
+      actionsContainer.className = 'prompt-actions';
+      
+      // Create edit button
+      const editButton = document.createElement('button');
+      editButton.className = 'prompt-edit-btn';
+      editButton.title = 'Edit prompt';
+      editButton.innerHTML = '✎'; // Pencil icon
+      
+      // Create delete button
+      const deleteButton = document.createElement('button');
+      deleteButton.className = 'prompt-delete-btn';
+      deleteButton.title = 'Delete prompt';
+      deleteButton.innerHTML = '×'; // X icon
+      
+      // Add event listeners
+      editButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        editPrompt(name, prompts[name]);
+      });
+      
+      deleteButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        deletePrompt(name);
+      });
+      
+      // Create a preview of the prompt text
+      const promptPreview = document.createElement('div');
+      promptPreview.className = 'prompt-preview';
+      // Truncate text for preview
+      const previewText = prompts[name].length > 100 
+        ? prompts[name].substring(0, 100) + '...' 
+        : prompts[name];
+      promptPreview.textContent = previewText;
+      
+      // Add elements to containers
+      actionsContainer.appendChild(editButton);
+      actionsContainer.appendChild(deleteButton);
+      
+      promptItem.appendChild(promptName);
+      promptItem.appendChild(promptPreview);
+      promptItem.appendChild(actionsContainer);
+      
+      // Add title attribute for hover to show full prompt text
+      promptItem.setAttribute('title', prompts[name]);
+      
+      // Add click event to insert the prompt
       promptItem.addEventListener('click', function() {
         insertPromptText(prompts[name]);
       });
