@@ -336,11 +336,18 @@ function loadSidebarState(callback) {
 
 // Save sidebar state
 function saveSidebarState(isCollapsed) {
-  chrome.storage.local.set({ 
+  console.log('Saving sidebar state, collapsed: ' + isCollapsed);
+  chrome.storage.local.set({
     sidebarState: { 
       collapsed: isCollapsed,
       timestamp: Date.now()
     } 
+  }, function() {
+    if (chrome.runtime.lastError) {
+      console.error('Error saving sidebar state:', chrome.runtime.lastError);
+    } else {
+      console.log('Sidebar state saved successfully');
+    }
   });
 }
 
@@ -349,7 +356,10 @@ function toggleSidebar() {
   const sidebar = document.getElementById('prompt-bank-sidebar');
   const body = document.body;
   
-  if (!sidebar) return;
+  if (!sidebar) {
+    console.log('Sidebar element not found, cannot toggle');
+    return;
+  }
   
   const isCurrentlyCollapsed = sidebar.classList.contains('collapsed');
   
@@ -364,14 +374,20 @@ function toggleSidebar() {
     console.log('Collapsing sidebar');
   }
   
-  // Update toggle button text
+  // Update toggle button text - PB when collapsed, × when expanded
   const toggleButton = document.querySelector('.prompt-bank-toggle');
   if (toggleButton) {
-    toggleButton.innerHTML = isCurrentlyCollapsed ? '×' : 'PB';
+    const newCollapsedState = !isCurrentlyCollapsed;
+    toggleButton.innerHTML = newCollapsedState ? 'PB' : '×';
+    console.log('Updated toggle button text to:', newCollapsedState ? 'PB (collapsed)' : '× (expanded)');
+  } else {
+    console.log('Toggle button not found');
   }
   
-  // Save the state with the new collapsed value (opposite of current)
-  saveSidebarState(!isCurrentlyCollapsed);
+  // Save the state with the CURRENT collapsed value (after toggle), not the opposite
+  const newCollapsedState = !isCurrentlyCollapsed;
+  console.log('Saving new collapsed state:', newCollapsedState);
+  saveSidebarState(newCollapsedState);
 }
 
 // Load and initialize sidebar
@@ -507,8 +523,18 @@ function createPromptSidebar() {
     // Create toggle button for mobile/collapsed state
     const toggleButton = document.createElement('div');
     toggleButton.className = 'prompt-bank-toggle';
+
+    // Make sure the label is correct - PB when collapsed, × when expanded
     toggleButton.innerHTML = isCollapsed ? 'PB' : '×';
-    toggleButton.addEventListener('click', toggleSidebar);
+    console.log('Creating toggle button with initial state:', isCollapsed ? 'collapsed (PB)' : 'expanded (×)');
+
+    // Use a direct click handler instead of separate function reference
+    toggleButton.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleSidebar();
+      console.log('Toggle button clicked');
+    });
     
     // Apply the correct body class before inserting the sidebar
     if (isCollapsed) {
@@ -901,24 +927,26 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
       const timestamp = changes.sidebarState.newValue?.timestamp;
       const currentTimestamp = Date.now();
       
-      // If it's a recent change (within last second) and not from this instance, apply it
-      if (timestamp && (currentTimestamp - timestamp < 1000)) {
-        const isCollapsed = changes.sidebarState.newValue?.collapsed === true;
-        const sidebar = document.getElementById('prompt-bank-sidebar');
-        const toggleButton = document.querySelector('.prompt-bank-toggle');
+      console.log('Sidebar state changed in storage:', changes.sidebarState.newValue);
+      
+      // Update the UI regardless of timestamp to ensure state consistency
+      const isCollapsed = changes.sidebarState.newValue?.collapsed === true;
+      const sidebar = document.getElementById('prompt-bank-sidebar');
+      const toggleButton = document.querySelector('.prompt-bank-toggle');
+      
+      if (sidebar) {
+        if (isCollapsed) {
+          sidebar.classList.add('collapsed');
+          document.body.classList.add('prompt-bank-collapsed');
+        } else {
+          sidebar.classList.remove('collapsed');
+          document.body.classList.remove('prompt-bank-collapsed');
+        }
         
-        if (sidebar) {
-          if (isCollapsed) {
-            sidebar.classList.add('collapsed');
-            document.body.classList.add('prompt-bank-collapsed');
-          } else {
-            sidebar.classList.remove('collapsed');
-            document.body.classList.remove('prompt-bank-collapsed');
-          }
-          
-          if (toggleButton) {
-            toggleButton.innerHTML = isCollapsed ? 'PB' : '×';
-          }
+        if (toggleButton) {
+          // PB when collapsed, × when expanded
+          toggleButton.innerHTML = isCollapsed ? 'PB' : '×';
+          console.log('Updated toggle button from storage change to:', isCollapsed ? 'PB (collapsed)' : '× (expanded)');
         }
       }
     }
@@ -943,7 +971,108 @@ function initializePromptBank() {
   // Remove the loading class after a brief delay to ensure smooth transition
   setTimeout(() => {
     document.documentElement.classList.remove('prompt-bank-loading');
+    
+    // Verify toggle button functionality
+    verifyToggleButton();
+    
+    // Test toggle after initialization
+    testToggleFunctionality();
   }, 300);
+}
+
+// Verify that the toggle button is working properly
+function verifyToggleButton() {
+  const toggleButton = document.querySelector('.prompt-bank-toggle');
+  if (!toggleButton) {
+    console.error('Toggle button not found during verification');
+    
+    // Try to recreate the toggle button if it doesn't exist
+    const sidebar = document.getElementById('prompt-bank-sidebar');
+    if (sidebar) {
+      chrome.storage.local.get('sidebarState', function(data) {
+        const isCollapsed = data.sidebarState?.collapsed === true;
+        
+        const newToggleButton = document.createElement('div');
+        newToggleButton.className = 'prompt-bank-toggle';
+        // PB when collapsed, × when expanded
+        newToggleButton.innerHTML = isCollapsed ? 'PB' : '×';
+        console.log('Creating replacement toggle button with state:', isCollapsed ? 'PB (collapsed)' : '× (expanded)');
+        
+        newToggleButton.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleSidebar();
+          console.log('Recreated toggle button clicked');
+        });
+        
+        document.body.appendChild(newToggleButton);
+        console.log('Toggle button recreated');
+      });
+    }
+  } else {
+    console.log('Toggle button verified');
+    
+    // Ensure it has a click handler
+    const oldClick = toggleButton.onclick;
+    if (!oldClick) {
+      toggleButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleSidebar();
+        console.log('Fixed toggle button clicked');
+      });
+      console.log('Added missing click handler to toggle button');
+    }
+    
+    // Double-check that the toggle button has the correct text
+    chrome.storage.local.get('sidebarState', function(data) {
+      const isCollapsed = data.sidebarState?.collapsed === true;
+      const sidebar = document.getElementById('prompt-bank-sidebar');
+      
+      // If sidebar exists, make sure button text matches sidebar state
+      if (sidebar) {
+        const sidebarCollapsed = sidebar.classList.contains('collapsed');
+        if ((sidebarCollapsed && toggleButton.innerHTML !== 'PB') ||
+            (!sidebarCollapsed && toggleButton.innerHTML !== '×')) {
+          toggleButton.innerHTML = sidebarCollapsed ? 'PB' : '×';
+          console.log('Fixed inconsistent toggle button text to:', sidebarCollapsed ? 'PB (collapsed)' : '× (expanded)');
+        }
+      }
+    });
+  }
+}
+
+// Test function to validate toggle is working
+function testToggleFunctionality() {
+  // This function will just test if the toggle button is functioning correctly
+  const toggleButton = document.querySelector('.prompt-bank-toggle');
+  const sidebar = document.getElementById('prompt-bank-sidebar');
+  
+  if (toggleButton && sidebar) {
+    console.log('Toggle test - sidebar state:', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
+    console.log('Toggle test - toggle button text:', toggleButton.innerHTML);
+    console.log('Toggle test - ensure click handler works by checking event listeners');
+    
+    // Force toggle button to have the correct appearance and z-index
+    toggleButton.style.zIndex = '9999';
+    toggleButton.style.visibility = 'visible';
+    toggleButton.style.opacity = '1';
+    
+    // Re-assign click handler to ensure it works
+    toggleButton.onclick = function(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      toggleSidebar();
+      console.log('Toggle clicked from test function');
+      return false;
+    };
+  } else {
+    console.error('Toggle test failed - missing elements:', 
+                 !toggleButton ? 'toggle button' : '', 
+                 !sidebar ? 'sidebar' : '');
+  }
 }
 
 // Also add a MutationObserver to handle dynamic page changes in SPAs
@@ -961,6 +1090,12 @@ const observer = new MutationObserver(function(mutations) {
         // Remove loading class after brief delay
         setTimeout(() => {
           document.documentElement.classList.remove('prompt-bank-loading');
+          
+          // Verify toggle button functionality after creating sidebar
+          verifyToggleButton();
+          
+          // Test toggle functionality
+          testToggleFunctionality();
         }, 300);
       }
     }

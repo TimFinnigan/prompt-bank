@@ -317,7 +317,7 @@ html.prompt-bank-loading #prompt-bank-sidebar {
   font-size: 20px;
   cursor: pointer;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  z-index: 1001;
+  z-index: 9999;
   transition: right 0.3s ease, opacity 0.3s ease, visibility 0s;
   visibility: visible;
   opacity: 1;
@@ -330,6 +330,11 @@ html.prompt-bank-loading .prompt-bank-toggle {
 
 body:not(.prompt-bank-collapsed) .prompt-bank-toggle {
   right: 270px;
+}
+
+.prompt-bank-toggle:hover {
+  background-color: #0d8c6d;
+  transform: scale(1.05);
 }
 
 /* Debug panel styles */
