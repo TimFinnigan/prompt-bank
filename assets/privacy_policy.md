@@ -54,11 +54,6 @@ The Prompt Bank extension is intended for general audiences and does not knowing
 
 We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy in the extension's Chrome Web Store listing. You are advised to review this Privacy Policy periodically for any changes.
 
-## Contact Us
-
-If you have any questions about this Privacy Policy, please contact us at:
-[Your Contact Information]
-
 ## User Rights
 
 You have complete control over your data:
