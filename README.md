@@ -2,6 +2,12 @@
 
 A Chrome extension that allows you to save and quickly insert prompts on ChatGPT's website.
 
+## Demo
+
+[![Prompt Bank Demo](https://img.youtube.com/vi/YEfhMsecxWs/0.jpg)](https://www.youtube.com/watch?v=YEfhMsecxWs)
+
+Click the image above to watch a demo of Prompt Bank in action.
+
 ## Features
 
 - Save, edit, and manage prompts directly from the sidebar
